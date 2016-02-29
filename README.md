@@ -1,1 +1,1 @@
-# linuxnewsgenerator
+# Linux News Generator
