@@ -14,6 +14,31 @@ import time
 import unicodedata as ud
 
 
+class checkboxes(Qw.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.one_check = Qw.QCheckBox()
+        self.two_check = Qw.QCheckBox()
+        self.three_check = Qw.QCheckBox()
+        self.four_check = Qw.QCheckBox()
+        self.five_check = Qw.QCheckBox()
+
+        vertical_lay = Qw.QVBoxLayout()
+        vertical_lay.addWidget(self.one_check)
+        vertical_lay.addWidget(self.two_check)
+        vertical_lay.addWidget(self.three_check)
+        vertical_lay.addWidget(self.four_check)
+        vertical_lay.addWidget(self.five_check)
+
+        print(vertical_lay.getContentsMargins())
+        self.setLayout(vertical_lay)
+
+        self.setFixedWidth(35)
+
+
 class Form(Qw.QWidget):
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
@@ -21,11 +46,12 @@ class Form(Qw.QWidget):
         self.reddit_data = []
 
     def setupUi(self, Form):
-        Form.resize(400, 270)
+        Form.resize(700, 400)
 
-        self.list_widget = Qw.QListWidget(Form)
-        item = Qw.QListWidgetItem()
-        self.list_widget.addItem(item)
+        self.checkies = checkboxes()
+
+        self.text_output = Qw.QTextEdit(Form)
+        self.text_output.setStyleSheet('background:#D6DAF0;')
 
         self.source_combox = Qw.QComboBox(Form)
         self.source_combox.addItem("Reddit - /r/linux")
@@ -37,9 +63,10 @@ class Form(Qw.QWidget):
         grid = Qw.QGridLayout()
         grid.setSpacing(10)
 
-        grid.addWidget(self.list_widget, 1, 1, 2, 2)
-        grid.addWidget(self.source_combox, 3, 1)
-        grid.addWidget(self.roll_button, 3, 2)
+        grid.addWidget(self.checkies, 0, 0, 2, 1)
+        grid.addWidget(self.text_output, 0, 1, 2, 2)
+        grid.addWidget(self.source_combox, 3, 1, 1, 1)
+        grid.addWidget(self.roll_button, 3, 2, 1, 1)
         self.setLayout(grid)
 
     def roll_the_news(self):
@@ -51,10 +78,11 @@ class Form(Qw.QWidget):
         self.populate_list(random_news)
 
     def populate_list(self, news_list):
-        self.list_widget.clear()
+        self.text_output.clear()
         for z in news_list:
-            self.list_widget.addItem('>{}'.format(z.title))
-            self.list_widget.addItem(z.url)
+            self.text_output.append('<big><b><font color=#789922>>{}</big></b></font color>'.format(z.title))
+            self.text_output.append(z.url)
+            self.text_output.append('')
 
     def get_reddit_r_linux(self):
         yesterday = time.time() - (24*60*60)
@@ -62,8 +90,10 @@ class Form(Qw.QWidget):
         submissions = r.get_subreddit('linux').get_new(limit=100)
         for z in submissions:
             print(z.title)
-            print(z.is_self)
-            if z.created_utc < yesterday and not z.is_self:
+            print(z.created_utc)
+            print(yesterday)
+            print(z.created_utc - yesterday)
+            if z.created_utc > yesterday and not z.is_self:
                 self.reddit_data.append(z)
 
 
