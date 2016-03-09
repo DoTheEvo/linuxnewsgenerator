@@ -3,6 +3,7 @@ import PyQt5.QtGui as Qg
 import PyQt5.QtWidgets as Qw
 
 from bs4 import BeautifulSoup
+from copy import copy
 import praw
 import queue
 import random
@@ -20,22 +21,16 @@ class checkboxes(Qw.QWidget):
         self.initUI()
 
     def initUI(self):
-        self.one_check = Qw.QCheckBox()
-        self.two_check = Qw.QCheckBox()
-        self.three_check = Qw.QCheckBox()
-        self.four_check = Qw.QCheckBox()
-        self.five_check = Qw.QCheckBox()
-
+        self.checkies = []
         vertical_lay = Qw.QVBoxLayout()
-        vertical_lay.addWidget(self.one_check)
-        vertical_lay.addWidget(self.two_check)
-        vertical_lay.addWidget(self.three_check)
-        vertical_lay.addWidget(self.four_check)
-        vertical_lay.addWidget(self.five_check)
 
-        print(vertical_lay.getContentsMargins())
+        for x in range(5):
+            self.checkies.append(Qw.QCheckBox())
+
+        for x in self.checkies:
+            vertical_lay.addWidget(x)
+
         self.setLayout(vertical_lay)
-
         self.setFixedWidth(35)
 
 
@@ -44,11 +39,14 @@ class Form(Qw.QWidget):
         super(Form, self).__init__(parent)
         self.setupUi(self)
         self.reddit_data = []
+        self.random_news = []
+        self.accepted_stories = {}
 
     def setupUi(self, Form):
         Form.resize(700, 400)
 
-        self.checkies = checkboxes()
+        self.cb = checkboxes()
+        self.cb.setDisabled(True)
 
         self.text_output = Qw.QTextEdit(Form)
         self.text_output.setStyleSheet('background:#D6DAF0;')
@@ -63,37 +61,48 @@ class Form(Qw.QWidget):
         grid = Qw.QGridLayout()
         grid.setSpacing(10)
 
-        grid.addWidget(self.checkies, 0, 0, 2, 1)
+        grid.addWidget(self.cb, 0, 0, 2, 1)
         grid.addWidget(self.text_output, 0, 1, 2, 2)
         grid.addWidget(self.source_combox, 3, 1, 1, 1)
         grid.addWidget(self.roll_button, 3, 2, 1, 1)
         self.setLayout(grid)
 
+        for x in self.cb.checkies:
+            x.stateChanged.connect(self.checkbox_got_checked)
+
     def roll_the_news(self):
         if not self.reddit_data:
             self.get_reddit_r_linux()
             self.roll_button.setText('Re-Roll')
+            self.cb.setDisabled(False)
+            for z in range(5):
+                self.random_news.append(copy(random.choice(self.reddit_data)))
 
-        random_news = random.sample(self.reddit_data, 5)
-        self.populate_list(random_news)
-
-    def populate_list(self, news_list):
         self.text_output.clear()
-        for z in news_list:
+
+        for x in range(5):
+            if not self.random_news[x].locked_by_checkbox:
+                self.random_news[x] = copy(random.choice(self.reddit_data))
+
+        for z in self.random_news:
             self.text_output.append('<big><b><font color=#789922>>{}</big></b></font color>'.format(z.title))
             self.text_output.append(z.url)
             self.text_output.append('')
+
+    def checkbox_got_checked(self):
+        for i in range(5):
+            if self.cb.checkies[i].isChecked():
+                self.random_news[i].locked_by_checkbox = True
+            else:
+                self.random_news[i].locked_by_checkbox = False
 
     def get_reddit_r_linux(self):
         yesterday = time.time() - (24*60*60)
         r = praw.Reddit(user_agent='linuxnewsgenerator')
         submissions = r.get_subreddit('linux').get_new(limit=100)
         for z in submissions:
-            print(z.title)
-            print(z.created_utc)
-            print(yesterday)
-            print(z.created_utc - yesterday)
             if z.created_utc > yesterday and not z.is_self:
+                z.locked_by_checkbox = False
                 self.reddit_data.append(z)
 
 
