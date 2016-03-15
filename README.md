@@ -1,3 +1,6 @@
 # Linux News Generator
 
-![demonstration gif](http://i.imgur.com/koDGvSG.gif)
+###### python3  
+requires: PyQt5, praw, feedparser
+
+![demonstration gif](http://i.imgur.com/jghGHSe.gif)
